@@ -130,6 +130,7 @@
     <EmbeddedResource Include="manifest.json" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="Directory.Build.props" Condition="Exists('Directory.Build.props')" />
     <None Include="bsrpc.csproj.user" Condition="Exists('bsrpc.csproj.user')" />
     <None Include="README.md" />

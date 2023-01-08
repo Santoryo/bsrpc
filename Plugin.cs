@@ -14,6 +14,7 @@ namespace bsrpc
     public class Plugin
     {
         internal static IPALogger Log { get; private set; }
+        internal static Plugin Instance { get; private set; }
 
         private DiscordInstance _discord;
         private const long DiscordClientId = 1028340906740420711;
@@ -25,8 +26,9 @@ namespace bsrpc
         /// [Init] methods that use a Constructor or called before regular methods like InitWithConfig.
         /// Only use [Init] with one Constructor.
         /// </summary>
-        public void Init(IPALogger logger)
+        public void Init(IPALogger logger, IPA.Config.Config conf)
         {
+            Instance = this;
             Log = logger;
             Log.Info("bsrpc initialized.");
         }
@@ -54,7 +56,7 @@ namespace bsrpc
         private void SetUpdateTimer(int debounceMs = 500)
         {
             _updateTimer?.Dispose();
-            _updateTimer = new Timer((e) => UpdateRichPresence(), null, debounceMs, 5000);
+            _updateTimer = new Timer((e) => UpdateRichPresence(), null, debounceMs, 1000);
         }
 
         private void UpdateRichPresence(string jsonData)
@@ -221,7 +223,8 @@ namespace bsrpc
             var assets = new ActivityAssets();
             if (MapData.Instance.InLevel)
             {
-                assets.LargeImage = RichPresenceAssetKeys.TheFirst;
+                assets.LargeImage = MapData.Instance.CoverImage;
+                assets.LargeText = $"{MapData.Instance.SongName} by {MapData.Instance.SongAuthor}";
 
                 switch (MapData.Instance.MapType)
                 {
@@ -264,7 +267,7 @@ namespace bsrpc
             }
             if (assets.LargeImage != null)
             {
-                assets.LargeText = $"Game version: {MapData.GameVersion}";
+                assets.LargeText = $"{MapData.Instance.SongName} by {MapData.Instance.SongAuthor}";
             }
 
             return assets;
@@ -283,8 +286,8 @@ namespace bsrpc
 
                 var difficulty = GetReadableDifficulty(MapData.Instance.Difficulty);
                 var songSubName = MapData.Instance.SongSubName.Length > 0 ? $" {MapData.Instance.SongSubName}" : "";
-                var mapper = MapData.Instance.Mapper.Length > 0 ? $" [{MapData.Instance.Mapper}]" : "";
-                activity.Details = $"{MapData.Instance.SongName}{songSubName} by {MapData.Instance.SongAuthor}{mapper} ({difficulty}{rankedStatus})";
+                var mapper = MapData.Instance.Mapper.Length > 0 ? $" by [{MapData.Instance.Mapper}]" : "";
+                activity.Details = $"{MapData.Instance.SongAuthor} - {MapData.Instance.SongName}";
 
                 if (LiveData.Instance.TimeElapsed > 0)
                 {
@@ -300,17 +303,19 @@ namespace bsrpc
                     }
                 }
 
-                activity.State = $"{playState} {lobbyType}{playDetail}";
+                activity.State = $"{difficulty} {mapper} ";
             }
             else
             {
                 if (MapData.Instance.IsMultiplayer)
                 {
                     activity.State = "Multiplayer Lobby";
+                    activity.Timestamps.Start = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 }
                 else
                 {
                     activity.State = "Main Menu";
+                    activity.Timestamps.Start = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 }
             }
             return activity;
